@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query
 from db_utils import run_query
+from llm_agent import answer_question
 import uvicorn
 
 app = FastAPI(title="E-commerce SQL LLM API")
@@ -10,12 +11,17 @@ def home():
 
 @app.get("/query")
 def query_database(sql: str = Query(..., description="SQL query to execute")):
-    """
-    Example: http://127.0.0.1:8000/query?sql=SELECT * FROM ad_sales_metrics LIMIT 5;
-    """
     try:
         result = run_query(sql)
         return {"query": sql, "result": result}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/ask")
+def ask(question: str = Query(..., description="Ask a question about your e-commerce data")):
+    try:
+        result = answer_question(question)
+        return {"question": question, "answer": result}
     except Exception as e:
         return {"error": str(e)}
 
