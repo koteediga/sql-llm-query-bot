@@ -1,42 +1,68 @@
+# main.py
 from fastapi import FastAPI, Query
-from fastapi.responses import FileResponse
-import uvicorn
-import os
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+import io
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 from db_utils import run_query
-from nl_sql_agent import answer_question
+from llm_agent import answer_question  # <-- renamed import here
 
 app = FastAPI(title="E-commerce SQL LLM API")
+
+# CORS (frontend at localhost:3000; * allowed for quick demo)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten later if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def home():
     return {"message": "Welcome to the E-commerce Query API"}
 
 @app.get("/query")
-def query_database(sql: str = Query(..., description="SQL query to execute")):
-    """
-    Example: http://127.0.0.1:8000/query?sql=SELECT * FROM ad_sales_metrics LIMIT 5;
-    """
+def query_database(sql: str = Query(..., description="SQL SELECT to execute")):
+    if not sql.strip().lower().startswith("select"):
+        return {"error": "Only SELECT queries allowed."}
     try:
-        result = run_query(sql)
-        return {"query": sql, "result": result}
+        return {"query": sql, "result": run_query(sql)}
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e), "query": sql}
 
 @app.get("/ask")
-def ask_question(question: str = Query(..., description="Natural language question")):
-    """
-    Example: http://127.0.0.1:8000/ask?question=What is my total sales?
-    """
-    return answer_question(question)
+def ask(question: str = Query(..., description="Ask a data question")):
+    return {"question": question, **answer_question(question)}
 
 @app.get("/chart")
-def get_sales_chart():
-    """
-    Bonus: Generate a daily sales chart and return as an image.
-    """
-    from charts import generate_sales_chart
-    img_path = generate_sales_chart()
-    return FileResponse(img_path)
+def chart():
+    rows = run_query(
+        "SELECT date, SUM(total_sales) AS sales FROM total_sales_metrics GROUP BY date ORDER BY date;"
+    )
+    if not rows:
+        return {"error": "No data found."}
+
+    dates = [r[0] for r in rows]
+    sales = [r[1] for r in rows]
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(dates, sales, marker="o")
+    plt.title("Daily Total Sales")
+    plt.xlabel("Date")
+    plt.ylabel("Sales")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    plt.close()
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
