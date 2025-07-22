@@ -12,18 +12,14 @@ from typing import Optional, Dict, Any, List, Tuple
 
 from db_utils import run_query, list_tables, get_table_schema
 
-# ------------------------------------------------------------
-# Optional .env support (safe no-op if python-dotenv not installed)
-# ------------------------------------------------------------
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# ------------------------------------------------------------
-# Gemini API config
-# ------------------------------------------------------------
+
 API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 USE_LLM = bool(API_KEY)
 
@@ -35,9 +31,7 @@ else:
     print("[llm_agent] WARNING: No Gemini key found. Running in rule-based mode only.")
 
 
-# ------------------------------------------------------------
-# Schema builder (fresh from DB each call so always in sync)
-# ------------------------------------------------------------
+
 def _build_schema_text() -> str:
     lines = []
     for (tname,) in list_tables():
@@ -47,9 +41,7 @@ def _build_schema_text() -> str:
     return "\n".join(lines)
 
 
-# ------------------------------------------------------------
-# Few-shot prompt examples (help guide Gemini)
-# ------------------------------------------------------------
+
 FEW_SHOT = """
 Example:
 Q: What is my total sales?
@@ -95,9 +87,7 @@ SQL:
 """
 
 
-# ------------------------------------------------------------
-# Rule-based shortcuts (fast & guaranteed for demo)
-# ------------------------------------------------------------
+
 def _shortcut(question: str) -> Optional[str]:
     q = question.lower()
 
@@ -140,9 +130,7 @@ def _shortcut(question: str) -> Optional[str]:
     return None
 
 
-# ------------------------------------------------------------
-# Gemini call + cleaning
-# ------------------------------------------------------------
+
 def _call_gemini(prompt: str) -> str:
     resp = _model.generate_content(prompt)
     return (resp.text or "").strip()

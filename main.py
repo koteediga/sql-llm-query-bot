@@ -8,11 +8,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from db_utils import run_query
-from llm_agent import answer_question  # <-- renamed import here
+from llm_agent import answer_question  
 
 app = FastAPI(title="E-commerce SQL LLM API")
 
-# CORS (frontend at localhost:3000; * allowed for quick demo)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # tighten later if needed

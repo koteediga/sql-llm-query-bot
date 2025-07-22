@@ -11,15 +11,13 @@ function Dashboard() {
   const [askResult, setAskResult] = useState(null);
   const [error, setError] = useState(null);
 
-  /* -------------------- Helpers -------------------- */
-
-  // Render rows as a table. Accepts array-of-arrays OR array-of-objects.
+ 
   const renderResultTable = (rows) => {
     if (!Array.isArray(rows) || rows.length === 0) {
       return <div>No rows.</div>;
     }
 
-    // If rows are objects with keys, use those headers.
+    
     const first = rows[0];
     const isObjectRow = !Array.isArray(first) && typeof first === "object";
 
@@ -74,7 +72,7 @@ function Dashboard() {
     );
   };
 
-  /* -------------------- Backend Calls -------------------- */
+  /* Backend Calls */
 
   const runSqlQuery = async () => {
     if (!sqlInput.trim()) return;
@@ -120,7 +118,7 @@ function Dashboard() {
     askQuestion(q);
   };
 
-  /* -------------------- Render -------------------- */
+  
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
